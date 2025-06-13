@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package todo;
+
+option go_package = "go-grpc-todo/proto;todo";
+
+service TodoService {
+    rpc AddTask (Task) returns (TaskResponse);
+    rpc ListTasks (Empty) returns (TaskList);
+    rpc DeleteTask (TaskID) returns (TaskResponse);
+    rpc StreamTasks (Empty) returns (stream Task);
+}
+
+message Task {
+    string id = 1;
+    string description = 2;
+    bool done = 3;
+}
+
+message TaskID {
+    string id = 1;
+}
+
+message TaskResponse {
+    string message = 1;
+}
+
+message TaskList {
+    repeated Task tasks = 1;
+}
+
+message Empty {}
