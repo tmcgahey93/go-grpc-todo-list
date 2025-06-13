@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"google.golamg.org/grpc"
+	"google.golang.org/grpc"
 )
 
 func main() {
