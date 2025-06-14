@@ -2,14 +2,18 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	todo "go-grpc-todo-list/go-grpc-todo/proto"
 	"log"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func main() {
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	creds := credentials.NewTLS(&tls.Config{})
+	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(creds))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -29,7 +33,7 @@ func main() {
 	//list tasks
 	list, _ := client.ListTasks(context.Background(), &todo.Empty{})
 	for _, t := range list.Tasks {
-		fmt.Printf("Task: %s (%s)\n", t.Description, t.ID)
+		fmt.Printf("Task: %s (%s)\n", t.Description, t.Id)
 	}
 
 	//stream tasks
@@ -40,7 +44,7 @@ func main() {
 		if err != nil {
 			break
 		}
-		fmt.Printf("Streamed: %s (%s)\n", t.Description, t.ID)
+		fmt.Printf("Streamed: %s (%s)\n", t.Description, t.Id)
 	}
 
 	//delete task
