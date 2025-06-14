@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	todo "go-grpc-todo-list/go-grpc-todo/proto"
 	"log"
@@ -11,19 +12,19 @@ import (
 )
 
 type server struct {
-	todo.UnimplimentedTodoServiceServer
+	todo.UnimplementedTodoServiceServer
 	mu    sync.Mutex
 	tasks map[string]*todo.Task
 }
 
-func (s *server) AddTask(ctx content.Context, task *todo.Task) (*todo.TaskResponse, error) {
+func (s *server) AddTask(ctx context.Context, task *todo.Task) (*todo.TaskResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.tasks[task.Id] = task
 	return &todo.TaskResponse{Message: "Task added!"}, nil
 }
 
-func (s *server) ListTasks(ctx content.Context, _ *todo.Empty) (*todo.TaskList, error) {
+func (s *server) ListTasks(ctx context.Context, _ *todo.Empty) (*todo.TaskList, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var list []*todo.Task
@@ -35,7 +36,7 @@ func (s *server) ListTasks(ctx content.Context, _ *todo.Empty) (*todo.TaskList, 
 	return &todo.TaskList{Tasks: list}, nil
 }
 
-func (s *server) DeleteTask(ctx content.Context, id *todo.TaskID) (*todo.TaskResponse, error) {
+func (s *server) DeleteTask(ctx context.Context, id *todo.TaskID) (*todo.TaskResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.tasks, id.Id)
@@ -43,11 +44,11 @@ func (s *server) DeleteTask(ctx content.Context, id *todo.TaskID) (*todo.TaskRes
 	return &todo.TaskResponse{Message: "Task deleted!"}, nil
 }
 
-func (s *server) StreamTasks(_ *todo.Empty, stream todo.TodoService_StreamTaskServer) error {
+func (s *server) StreamTasks(_ *todo.Empty, stream todo.TodoService_StreamTasksServer) error {
 	s.mu.Lock()
-	tasks := makle([]*todo.Task, 0, len(s.tasks))
+	tasks := make([]*todo.Task, 0, len(s.tasks))
 
-	for _, task := range s.Tasks {
+	for _, task := range s.tasks {
 		tasks = append(tasks, task)
 	}
 
@@ -64,16 +65,14 @@ func (s *server) StreamTasks(_ *todo.Empty, stream todo.TodoService_StreamTaskSe
 func main() {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatal("failed to listen: %v", err)
+		log.Fatalf("failed to listen: %v", err)
 	}
 
 	s := grpc.NewServer()
-	todo.RegisterTodoServiceServer(s, &server{
-		task: make(map[string]*todo.Task),
-	})
+	todo.RegisterTodoServiceServer(s, &server{tasks: make(map[string]*todo.Task)})
 
 	fmt.Println("Server listening on :50051")
 	if err := s.Serve(lis); err != nil {
-		log.Fatal("failed to serve: %v", err)
+		log.Fatalf("failed to serve: %v", err)
 	}
 }
